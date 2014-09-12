@@ -1,0 +1,229 @@
+C51 COMPILER V9.52.0.0   SCI                                                               09/11/2014 17:20:01 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE SCI
+OBJECT MODULE PLACED IN SCI.OBJ
+COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE SCI.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          #include "SCI.h"
+   2          
+   3          void ResetWishbone() {
+   4   1        P1=0x38;//复位总线
+   5   1        wait(10,100);//几毫秒
+   6   1        P1=0x35;//设置分频为最大
+   7   1        wait(1,100);
+   8   1        P0=0x00;                   
+   9   1        P1=0x34;//设置CRTL寄存器
+  10   1        wait(1,100);
+  11   1        P0=0x90;
+  12   1        wait(1,100);
+  13   1      }
+  14          
+  15          void SCI_Init(){
+  16   1          //ML7266初始化方法
+  17   1          /**************************/
+  18   1        REGPD=0;
+  19   1        SINTN=1;
+  20   1        wait(1,100);//等待近百毫秒
+  21   1        RESET=0;//异步复位
+  22   1        wait(1,100);//等待毫秒
+  23   1        RESET=1;
+  24   1        wait(1,100);//芯片进入掉电状态，此时可以写读configuration registers和SXOSCON Command Strobe
+  25   1      
+  26   1        /**************************/
+  27   1      }
+  28          
+  29          unsigned char send_char(unsigned char c)
+  30          {
+  31   1        unsigned char receive;
+  32   1      
+  33   1        P1 =0x30;
+  34   1        P0 =c;  
+  35   1      
+  36   1        P1=0x00;
+  37   1        P0=0x10;
+  38   1      
+  39   1        P1 =0x34;
+  40   1        P0 =0x34;
+  41   1      
+  42   1        do
+  43   1        {
+  44   2          P1 = 0x14;
+  45   2        }
+  46   1        while(busy);  
+  47   1        
+  48   1        P1=0x10;
+  49   1        wait(1,1);
+  50   1        receive=P0;
+  51   1        return(receive);
+  52   1      }
+  53          
+  54          /*
+  55          void ReadRegister(unsigned char add) {
+C51 COMPILER V9.52.0.0   SCI                                                               09/11/2014 17:20:01 PAGE 2   
+
+  56            
+  57            add=0x40 | add;
+  58            ResetWishbone();
+  59            CSn=0;
+  60            wait(1,100);
+  61            send_char(add);//读寄存器，此后SI脚为无效状态
+  62            wait(1,100);
+  63            RSB=ByteRead;
+  64            wait(1,100);
+  65            send_char(0x00);
+  66            wait(1,100);
+  67            MSB=ByteRead;
+  68            send_char(0x00);
+  69            wait(1,100);
+  70            CSn=1;
+  71            wait(1,100);
+  72            LSB=ByteRead;
+  73            wait(1,100);
+  74          }
+  75          
+  76          void WriteRegister(unsigned char add) {
+  77            ResetWishbone();
+  78            CSn=0;
+  79            wait(1,100);
+  80            send_char(add);//写寄存器
+  81            wait(1,100);
+  82            RSB=ByteRead; 
+  83            wait(1,100);
+  84            send_char(MSB);
+  85            wait(1,100);
+  86            send_char(LSB);
+  87            wait(1,100);
+  88            CSn=1;  
+  89            wait(1,100);
+  90          }
+  91          
+  92          void Oscillator(){//开启晶振
+  93            while( (ByteRead&0x40)!=0x40){
+  94              CSn=0;
+  95              send_char(0x01);
+  96              wait(1,100);  
+  97              CSn=1;  
+  98              wait(1,100);  
+  99            }
+ 100          }
+ 101          
+ 102          void SET_Freq() {//设置发送频率
+ 103            ReadRegister(FSCTRL);
+ 104            MSB |= 0x01;
+ 105            LSB = 0x65+5*(CHANNEL-11);      
+ 106            WriteRegister(FSCTRL);
+ 107          }
+ 108          
+ 109          void SET_CCA_THR(unsigned char CCA_thr) {//设置CCA阈值
+ 110            
+ 111            CCA_thr=CCA_thr | 0x80;
+ 112            ReadRegister(RSSI);
+ 113            MSB=CCA_thr; //lsb 保持不变
+ 114            WriteRegister(MDMCTRL0);
+ 115            wait(1,100);
+ 116            ReadRegister(MDMCTRL0);
+ 117            wait(1,100);
+C51 COMPILER V9.52.0.0   SCI                                                               09/11/2014 17:20:01 PAGE 3   
+
+ 118          }
+ 119          
+ 120          void SET_CRC(unsigned char CRC) {
+ 121            CRC=CRC & 0x20;
+ 122            ReadRegister(MDMCTRL0);
+ 123            LSB=LSB | CRC;
+ 124            WriteRegister(MDMCTRL0);
+ 125            wait(1,100);
+ 126          }
+ 127          
+ 128          void OFF_AddressDecode() {//关闭地址译码
+ 129              //设置无地址认证
+ 130            ReadRegister(MDMCTRL0);
+ 131            MSB = MSB & 0xF7;
+ 132            WriteRegister(MDMCTRL0);
+ 133            wait(1,100);
+ 134          }
+ 135          
+ 136          void Command(unsigned char command){
+ 137            ResetWishbone();
+ 138            CSn=0;
+ 139            wait(1,100);
+ 140            send_char(command);
+ 141            wait(1,100);
+ 142            RSB=ByteRead;
+ 143            wait(1,100);
+ 144            CSn=1;
+ 145            wait(1,100);
+ 146          }
+ 147          
+ 148          void WriteTXFIFO(unsigned char length,unsigned int d) {
+ 149          
+ 150            ResetWishbone();
+ 151            CSn=0;
+ 152            wait(1,10);
+ 153            send_char(0x3E);//写FIFO
+ 154            wait(1,100);
+ 155            send_char(length);
+ 156            wait(1,100);
+ 157            send_char(d>>8);
+ 158            wait(1,100);
+ 159            send_char(d);
+ 160            wait(1,100);
+ 161            send_char(0x00);
+ 162            wait(1,100);
+ 163            send_char(0x00);
+ 164            wait(1,100);
+ 165            CSn=1;  
+ 166            wait(1,10);
+ 167          }
+ 168          
+ 169          
+ 170          void ReadRXFIFO(void) {
+ 171            ResetWishbone();
+ 172            CSn=0;
+ 173            wait(1,100);
+ 174            send_char(0x3F);//读FIFO
+ 175            RSB=ByteRead;
+ 176            wait(1,100);  
+ 177            CSn=1;  
+ 178            wait(1,100);
+ 179          }
+C51 COMPILER V9.52.0.0   SCI                                                               09/11/2014 17:20:01 PAGE 4   
+
+ 180          
+ 181          void ReadRam(unsigned char ramAdd,unsigned char bank) {
+ 182            ResetWishbone();
+ 183            ramAdd=ramAdd | 0x80;
+ 184            bank=(bank<<6);
+ 185            bank=bank | 0x20;
+ 186            CSn=0;
+ 187            wait(1,100);
+ 188            send_char(ramAdd);
+ 189            wait(1,100);
+ 190            RSB=ByteRead;
+ 191            wait(1,100);
+ 192            send_char(bank);
+ 193            wait(1,100);
+ 194            send_char(0x00);
+ 195            wait(1,100);
+ 196            CSn=1;  
+ 197            MSB=ByteRead;
+ 198            wait(1,100);
+ 199          }
+ 200          */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    138    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

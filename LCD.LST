@@ -1,0 +1,151 @@
+C51 COMPILER V9.52.0.0   LCD                                                               09/11/2014 17:20:01 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE LCD
+OBJECT MODULE PLACED IN LCD.OBJ
+COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE LCD.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          #include "LCD.h"
+   2          #include "Delay.h"
+   3          //-----------------------------------------------------------------------------------------
+   4          //函数名称：Ht1621Wr_Data() 
+   5          //功    能：写数据函数,cnt为传送数据位数,数据传送为低位在前 
+   6          //-----------------------------------------------------------------------------------------
+   7          void Ht1621Wr_Data(uchar Data,uchar cnt){ 
+   8   1        uchar i; 
+   9   1        for (i=0;i<cnt;i++){  
+  10   2          CLK = 0;    //CLK->L
+  11   2      
+  12   2          if((Data & 0x80)==0x80){
+  13   3            DAT = 1;    //DATA->H
+  14   3          }
+  15   2          else{
+  16   3            DAT = 0;  //DATA->L
+  17   3          }
+  18   2          /////DelayUS(1);
+  19   2          CLK = 1;    //CLK->H
+  20   2          /////DelayUS(1);
+  21   2          Data<<=1;  
+  22   2        } 
+  23   1      } 
+  24          //-----------------------------------------------------------------------------------------
+  25          //函数名称：void Ht1621WrCmd(uchar Cmd) 
+  26          //功能描述: HT1621命令写入函数 
+  27          //参数说明：Cmd为写入命令数据  
+  28          //说    明：写入命令标识位100 
+  29          //-----------------------------------------------------------------------------------------
+  30          void Ht1621WrCmd(uchar Cmd){
+  31   1        CS = 0; 
+  32   1        Ht1621Wr_Data(0x80,4);          //写入命令标志100 
+  33   1        Ht1621Wr_Data(Cmd,8);           //写入命令数据 
+  34   1        CS = 1;
+  35   1        DelayUS(1);
+  36   1      } 
+  37          //-----------------------------------------------------------------------------------------
+  38          //函数名称：void Ht1621WrOneData(uchar Addr,uchar Data) 
+  39          //功能描述: HT1621在指定地址写入数据函数 
+  40          //参数说明：Addr为写入初始地址，Data为写入数据  
+  41          //说    明：因为HT1621的数据位4位，所以实际写入数据为参数的后4位 
+  42          //-----------------------------------------------------------------------------------------
+  43          void Ht1621WrOneData(uchar Addr,uchar Data){ 
+  44   1        CS = 0;
+  45   1        Ht1621Wr_Data(0xa0,3);                  //写入数据标志101 
+  46   1        Ht1621Wr_Data(Addr<<2,6);               //写入地址数据 
+  47   1        Ht1621Wr_Data(Data<<4,4);               //写入数据 
+  48   1        CS = 1;
+  49   1        /////DelayUS(1);
+  50   1      } 
+  51          
+  52          //-----------------------------------------------------------------------------------------
+  53          //函数名称：void Ht1621_Init(void) 
+  54          //功能描述: HT1621初始化 
+  55          //说    明：初始化后，液晶屏所有字段均显示 
+C51 COMPILER V9.52.0.0   LCD                                                               09/11/2014 17:20:01 PAGE 2   
+
+  56          //-----------------------------------------------------------------------------------------
+  57          void Ht1621_Init(void){ 
+  58   1        // HT1621_CS=1; 
+  59   1        // HT1621_WR=1; 
+  60   1        // HT1621_DAT=1; 
+  61   1        // DelayMS(20);                     //延时使LCD工作电压稳定 
+  62   1         Ht1621WrCmd(BIAS); 
+  63   1         Ht1621WrCmd(RC256);                //使用内部振荡器 
+  64   1         Ht1621WrCmd(SYSDIS); 
+  65   1         Ht1621WrCmd(WDTDIS1); 
+  66   1         Ht1621WrCmd(SYSEN); 
+  67   1         Ht1621WrCmd(LCDON); 
+  68   1      } 
+  69          //-----------------------------------------------------------------------------------------
+  70          //函数名称：void Ht1621WrAllData() 
+  71          //功能描述: HT1621连续写入方式函数 
+  72          //说    明：HT1621的数据位4位，此处每次数据为8位，写入数据总数按8位计算 
+  73          //-----------------------------------------------------------------------------------------
+  74          void Ht1621WrAllData(void){ 
+  75   1        uchar i;  
+  76   1        CS = 0;
+  77   1        Ht1621Wr_Data(0xa0,3);            //写入数据标志101 
+  78   1        Ht1621Wr_Data(0x00<<2,6);         //写入地址数据 
+  79   1        for(i=0;i<4;i++){ 
+  80   2          Ht1621Wr_Data(0x00,8);          //写入数据 
+  81   2        } 
+  82   1        CS = 1;
+  83   1        /////DelayUS(1);
+  84   1      } 
+  85          
+  86          
+  87          void LCD_show(uint solar_time){
+  88   1        uchar i; 
+  89   1        CS = 0;
+  90   1        Ht1621Wr_Data(0xa0,3);            //写入数据标志101
+  91   1        Ht1621Wr_Data(0x00<<2,6);         //写入地址数据 
+  92   1        for(i=0;i<4;i++){ 
+  93   2          switch((solar_time&0xF000)>>12){
+  94   3            case 0x00:Ht1621Wr_Data(LCD_0,8);break;
+  95   3            case 0x01:Ht1621Wr_Data(LCD_1,8);break;
+  96   3            case 0x02:Ht1621Wr_Data(LCD_2,8);break;
+  97   3            case 0x03:Ht1621Wr_Data(LCD_3,8);break;
+  98   3            case 0x04:Ht1621Wr_Data(LCD_4,8);break;
+  99   3            case 0x05:Ht1621Wr_Data(LCD_5,8);break;
+ 100   3            case 0x06:Ht1621Wr_Data(LCD_6,8);break;
+ 101   3            case 0x07:Ht1621Wr_Data(LCD_7,8);break;
+ 102   3            case 0x08:Ht1621Wr_Data(LCD_8,8);break;
+ 103   3            case 0x09:Ht1621Wr_Data(LCD_9,8);break;
+ 104   3            case 0x0a:Ht1621Wr_Data(LCD_A,8);break;
+ 105   3            case 0x0b:Ht1621Wr_Data(LCD_B,8);break;
+ 106   3            case 0x0c:Ht1621Wr_Data(LCD_C,8);break;
+ 107   3            case 0x0d:Ht1621Wr_Data(LCD_D,8);break;
+ 108   3            case 0x0e:Ht1621Wr_Data(LCD_E,8);break;
+ 109   3            case 0x0f:Ht1621Wr_Data(LCD_F,8);break;
+ 110   3            default: Ht1621Wr_Data(LCD_ERROR,8);break;
+ 111   3          }
+ 112   2          solar_time = solar_time<<4;        
+ 113   2        } 
+ 114   1        CS = 1;
+ 115   1        /////DelayUS(1);
+ 116   1      }
+ 117          
+C51 COMPILER V9.52.0.0   LCD                                                               09/11/2014 17:20:01 PAGE 3   
+
+ 118          void Ht1621OFF(void){
+ 119   1        CS = 1;
+ 120   1        /////DelayUS(1);
+ 121   1      }
+ 122          void Ht1621ON(void){
+ 123   1        CS = 0;
+ 124   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    392    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       2
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

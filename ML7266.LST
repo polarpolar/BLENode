@@ -1,0 +1,320 @@
+C51 COMPILER V9.06   ML7266                                                                06/24/2014 16:58:53 PAGE 1   
+
+
+C51 COMPILER V9.06, COMPILATION OF MODULE ML7266
+OBJECT MODULE PLACED IN ML7266.OBJ
+COMPILER INVOKED BY: E:\Keil\C51\BIN\C51.EXE ML7266.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "ML7266.h"
+   2          
+   3          static unsigned char callback_length;
+   4          static unsigned char callback_PC;
+   5          static unsigned char callback_payload;
+   6          
+   7          void ML_TX(unsigned char *payload){
+   8   1              do{
+   9   2              //unsigned char appDataReq[] = {0x0F,0x40,SrcAdrMode,DstAdrMode,macPANId,DevshortAddr,0x05,0x00,0x00,0x00
+             -,0x00,0x00,0x01,0x01};
+  10   2                      unsigned char len=payload[0]+10+3;
+  11   2                      int j; 
+  12   2                      SCEN=0;
+  13   2                      send_char(0x02);
+  14   2                      //cmd length
+  15   2                      send_char(len);
+  16   2                      send_char(0x40);
+  17   2                      send_char(0x00);
+  18   2                      send_char(0x02);
+  19   2                      send_char(0xAD);                                                                                                           
+  20   2                      send_char(0xDE);
+  21   2                      send_char(0xAA);
+  22   2                      send_char(0xAA);
+  23   2                      //msdulength
+  24   2                      send_char((payload[0]+3));
+  25   2                      //data
+  26   2                      send_char(0x99);
+  27   2                      send_char(0x99);
+  28   2                      send_char(0x99);
+  29   2                      for(j=1;j<=payload[0];j++)
+  30   2                      {
+  31   3                              send_char(payload[j]);
+  32   3                      }
+  33   2                      //send_char(0x99);
+  34   2                      //tail
+  35   2                      send_char(0x01);
+  36   2                      send_char(0x01);
+  37   2                      SCEN=1;wait(1,3000);
+  38   2                      if(SINTN==0)
+  39   2                      {
+  40   3                              SCEN=0;
+  41   3                              send_char(0x01);
+  42   3                              callback_length=send_char(0x00);
+  43   3                              callback_PC=send_char(0x00);
+  44   3                              send_char(0x00);
+  45   3                              callback_payload=send_char(0x00);
+  46   3                              SCEN=1;wait(1,500);
+  47   3                              //LCD_show(callback_PC);wait(1,10000);
+  48   3                              //LCD_show(callback_payload);wait(1,10000);
+  49   3                              callback_payload=0x00;
+  50   3                      }
+  51   2              }while(callback_payload!=0x00);
+  52   1      }
+  53          
+  54          void ML_Reset()
+C51 COMPILER V9.06   ML7266                                                                06/24/2014 16:58:53 PAGE 2   
+
+  55          {
+  56   1              do{
+  57   2              //MLME-RESET.request
+  58   2              //unsigned char appCmd_1[] = {0x02,0x54,0x01};
+  59   2                      SCEN=0;
+  60   2                      send_char(0x02);
+  61   2                      send_char(0x02);
+  62   2                      send_char(0x54);
+  63   2                      send_char(0x01);
+  64   2                      SCEN=1;wait(1,500);
+  65   2                      if(SINTN==0)
+  66   2                      {
+  67   3                              SCEN=0;
+  68   3                              send_char(0x01);
+  69   3                              callback_length=send_char(0x00);
+  70   3                              callback_PC=send_char(0x00);
+  71   3                              callback_payload=send_char(0x00);
+  72   3                              SCEN=1;wait(1,500);
+  73   3                              //LCD_show(callback_PC);wait(1,10000);
+  74   3                              //LCD_show(callback_payload);wait(1,10000);
+  75   3                      }
+  76   2              }while(callback_payload!=0x00);
+  77   1      }
+  78          
+  79          void ML_SetExAdr()
+  80          {
+  81   1              do{
+  82   2              //MLME-SET.request( aExtendedAddress )
+  83   2              // unsigned char appCmd_2[] = {0x0A,0x5B,0x6F,macCoorExtAddr};  
+  84   2                      SCEN=0;
+  85   2                      send_char(0x02);
+  86   2                      send_char(0x0A);
+  87   2                      send_char(0x5B);
+  88   2                      send_char(0x6F);
+  89   2                      send_char(0xAA);
+  90   2                      send_char(0xAA);
+  91   2                      send_char(0xAA);
+  92   2                      send_char(0xAA);
+  93   2                      send_char(0xAA);
+  94   2                      send_char(0xAA);
+  95   2                      send_char(0xAA);
+  96   2                      send_char(0xAA);
+  97   2                      SCEN=1;wait(1,500);
+  98   2                      if(SINTN==0)
+  99   2                      {
+ 100   3                              SCEN=0;
+ 101   3                              send_char(0x01);
+ 102   3                              callback_length=send_char(0x00);
+ 103   3                              send_char(0x00);
+ 104   3                              callback_payload=send_char(0x00);
+ 105   3                              callback_PC=send_char(0x00);
+ 106   3                              SCEN=1;wait(1,500);
+ 107   3                              //LCD_show(callback_PC);wait(1,10000);
+ 108   3                              //LCD_show(callback_payload);wait(1,10000);
+ 109   3                      }
+ 110   2              }while(callback_payload!=0x00);
+ 111   1      }
+ 112          
+ 113          void ML_SetAssPmt()
+ 114          {
+ 115   1              do{
+ 116   2              //MLME-SET.request( macAssociationPermit )
+C51 COMPILER V9.06   ML7266                                                                06/24/2014 16:58:53 PAGE 3   
+
+ 117   2              // unsigned char appCmd_3[] = {0x03,0x5B,0x41,0x01};    
+ 118   2                      SCEN=0;
+ 119   2                      send_char(0x02);
+ 120   2                      send_char(0x03);
+ 121   2                      send_char(0x5B);
+ 122   2                      send_char(0x41);
+ 123   2                      send_char(0x01);
+ 124   2                      SCEN=1;wait(1,500);
+ 125   2                      if(SINTN==0)
+ 126   2                      {
+ 127   3                              SCEN=0;
+ 128   3                              send_char(0x01);
+ 129   3                              callback_length=send_char(0x00);
+ 130   3                              send_char(0x00);
+ 131   3                              callback_payload=send_char(0x00);
+ 132   3                              callback_PC=send_char(0x00);
+ 133   3                              SCEN=1;wait(1,500);
+ 134   3                              //LCD_show(callback_PC);wait(1,10000);
+ 135   3                              //LCD_show(callback_payload);wait(1,10000);
+ 136   3                      }
+ 137   2              }while(callback_payload!=0x00); 
+ 138   1      }
+ 139          
+ 140          void ML_SetShoAdr()
+ 141          {
+ 142   1              do{
+ 143   2              //MLME-SET.request( macShortAddress )
+ 144   2              // unsigned char appCmd_4[] = {0x04,0x5B,0x53,macCoorShortAddr};
+ 145   2                      SCEN=0;
+ 146   2                      send_char(0x02);
+ 147   2                      send_char(0x04);
+ 148   2                      send_char(0x5B);
+ 149   2                      send_char(0x53);
+ 150   2                      send_char(0xEF);
+ 151   2                      send_char(0xBE);
+ 152   2                      SCEN=1;wait(1,500);
+ 153   2                      if(SINTN==0)
+ 154   2                      {
+ 155   3                              SCEN=0;
+ 156   3                              send_char(0x01);
+ 157   3                              callback_length=send_char(0x00);
+ 158   3                              send_char(0x00);
+ 159   3                              callback_payload=send_char(0x00);
+ 160   3                              callback_PC=send_char(0x00);
+ 161   3                              SCEN=1;wait(1,500);
+ 162   3                              //LCD_show(callback_PC);wait(1,10000);
+ 163   3                              //LCD_show(callback_payload);wait(1,10000);
+ 164   3                      }
+ 165   2              }while(callback_payload!=0x00); 
+ 166   1      }
+ 167          
+ 168          void ML_SetPanID()
+ 169          {
+ 170   1              do{
+ 171   2              //MLME-SET.request( macPANId )
+ 172   2              // unsigned char appCmd_5[] = {0x04,0x5B,0x50,macPADId};
+ 173   2                      SCEN=0;
+ 174   2                      send_char(0x02);
+ 175   2                      send_char(0x04);
+ 176   2                      send_char(0x5B);
+ 177   2                      send_char(0x50);
+ 178   2                      send_char(0xAD);
+C51 COMPILER V9.06   ML7266                                                                06/24/2014 16:58:53 PAGE 4   
+
+ 179   2                      send_char(0xDE);
+ 180   2                      SCEN=1;wait(1,500);
+ 181   2                      if(SINTN==0)
+ 182   2                      {
+ 183   3                              SCEN=0;
+ 184   3                              send_char(0x01);
+ 185   3                              callback_length=send_char(0x00);
+ 186   3                              send_char(0x00);
+ 187   3                              callback_payload=send_char(0x00);
+ 188   3                              callback_PC=send_char(0x00);
+ 189   3                              SCEN=1;wait(1,500);
+ 190   3                              //LCD_show(callback_PC);wait(1,10000);
+ 191   3                              //LCD_show(callback_payload);wait(1,10000);
+ 192   3                      }
+ 193   2              }while(callback_payload!=0x00); 
+ 194   1      }
+ 195          
+ 196          void ML_SetRxOn()
+ 197          {
+ 198   1              do{
+ 199   2              //MLME-SET.request( macRxOnWhenIdle = TRUE )
+ 200   2              // unsigned char appCmd_6[] = {0x03,0x5B,0x52,0x01};
+ 201   2                      SCEN=0;
+ 202   2                      send_char(0x02);
+ 203   2                      send_char(0x03);
+ 204   2                      send_char(0x5B);
+ 205   2                      send_char(0x52);
+ 206   2                      send_char(0x01);
+ 207   2                      SCEN=1;wait(1,500);
+ 208   2                      if(SINTN==0)
+ 209   2                      {
+ 210   3                              SCEN=0;
+ 211   3                              send_char(0x01);
+ 212   3                              callback_length=send_char(0x00);
+ 213   3                              send_char(0x00);
+ 214   3                              callback_payload=send_char(0x00);
+ 215   3                              callback_PC=send_char(0x00);
+ 216   3                              SCEN=1;wait(1,500);
+ 217   3                              //LCD_show(callback_PC);wait(1,10000);
+ 218   3                              //LCD_show(callback_payload);wait(1,10000);
+ 219   3                      }
+ 220   2              }while(callback_payload!=0x00); 
+ 221   1      }
+ 222          
+ 223          void ML_SetPowMode()
+ 224          {
+ 225   1              do{
+ 226   2              //MLME-SET.request( Powersavemode )
+ 227   2              // unsigned char appCmd_7[] = {0x06,0x5D,macPANId,Char_Channel,0xFF01};
+ 228   2                      SCEN=0;
+ 229   2                      send_char(0x02);
+ 230   2                      send_char(0x03);
+ 231   2                      send_char(0x5B);
+ 232   2                      send_char(0x80);
+ 233   2                      send_char(0x00);
+ 234   2                      SCEN=1;wait(1,500);
+ 235   2                      if(SINTN==0)
+ 236   2                      {
+ 237   3                              SCEN=0;
+ 238   3                              send_char(0x01);
+ 239   3                              callback_length=send_char(0x00);
+ 240   3                              send_char(0x00);
+C51 COMPILER V9.06   ML7266                                                                06/24/2014 16:58:53 PAGE 5   
+
+ 241   3                              callback_payload=send_char(0x00);
+ 242   3                              callback_PC=send_char(0x00);
+ 243   3                              SCEN=1;wait(1,500);
+ 244   3                              //LCD_show(callback_PC);wait(1,10000);
+ 245   3                              //LCD_show(callback_payload);wait(1,10000);
+ 246   3                      }
+ 247   2              }while(callback_payload!=0x00); 
+ 248   1      }
+ 249          
+ 250          void ML_Start()
+ 251          {
+ 252   1              do{
+ 253   2              //MLME-START.request( non-beacon )
+ 254   2              // unsigned char appCmd_7[] = {0x06,0x5D,macPANId,Char_Channel,0xFF01};
+ 255   2                      SCEN=0;
+ 256   2                      send_char(0x02);
+ 257   2                      send_char(0x06);
+ 258   2                      send_char(0x5D);
+ 259   2                      send_char(0xAD);
+ 260   2                      send_char(0xDE);
+ 261   2                      send_char(0x1A);
+ 262   2                      send_char(0xFF);
+ 263   2                      send_char(0x01);
+ 264   2                      SCEN=1;wait(1,500);
+ 265   2                      if(SINTN==0)
+ 266   2                      {
+ 267   3                              SCEN=0;
+ 268   3                              send_char(0x01);
+ 269   3                              callback_length=send_char(0x00);
+ 270   3                              callback_PC=send_char(0x00);
+ 271   3                              callback_payload=send_char(0x00);
+ 272   3                              SCEN=1;wait(1,500);
+ 273   3                              //LCD_show(callback_PC);wait(1,10000);
+ 274   3                              //LCD_show(callback_payload);wait(1,10000);
+ 275   3                      }
+ 276   2              }while(callback_payload!=0x00); 
+ 277   1      }
+ 278          void ML_TX_init()
+ 279          {
+ 280   1              ML_Reset();
+ 281   1              ML_SetExAdr();
+ 282   1              ML_SetAssPmt();
+ 283   1              ML_SetShoAdr();
+ 284   1              ML_SetPanID();
+ 285   1              ML_SetRxOn();
+ 286   1              ML_SetPowMode();
+ 287   1              ML_Start();
+ 288   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1051    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

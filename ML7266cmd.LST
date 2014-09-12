@@ -1,0 +1,59 @@
+C51 COMPILER V9.06   ML7266CMD                                                             06/24/2014 16:58:53 PAGE 1   
+
+
+C51 COMPILER V9.06, COMPILATION OF MODULE ML7266CMD
+OBJECT MODULE PLACED IN ML7266cmd.OBJ
+COMPILER INVOKED BY: E:\Keil\C51\BIN\C51.EXE ML7266cmd.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "ML7266cmd.h"
+   2          
+   3          void ML_trans()
+   4          {
+   5   1      //      //unsigned char appDataReq[] = {0x0F,0x40,0x00,0x02,0xAD,0xDE,0xAA,0xAA,0x05,0x00,0x00,0x00,0x00,0x00,0
+             -x01,0x01};
+   6   1      //      unsigned char len=payload[0]+10+3;
+   7   1              int i;
+   8   1      //              wait(1,100); 
+   9   1      //              SCEN=0;wait(1,10);
+  10   1      //              send_char(0x03);
+  11   1      //              //cmd length
+  12   1      //              send_char(len);
+  13   1      //              send_char(0x40);
+  14   1      //              send_char(0x00);
+  15   1      //              send_char(0x02);
+  16   1      //              send_char(0xAD);                                                                                                           
+  17   1      //              send_char(0xDE);
+  18   1      //              send_char(0xAA);
+  19   1      //              send_char(0xAA);
+  20   1      //              //msdulength
+  21   1      //              send_char(payload[0]);
+  22   1      //              //data
+  23   1      //              send_char(0x99);
+  24   1      //              send_char(0x88);
+  25   1      //              send_char(0x77);
+  26   1      //              for(i=0;i<payload[0];i++)
+  27   1      //              {
+  28   1      //                      send_char(payload[i]);
+  29   1      //              }
+  30   1      //              //
+  31   1      //              send_char(0x01);
+  32   1      //              send_char(0x01);
+  33   1      //              SCEN=1;wait(1,10);
+  34   1      }       
+*** WARNING C280 IN LINE 7 OF ML7266cmd.c: 'i': unreferenced local variable
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =      1    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

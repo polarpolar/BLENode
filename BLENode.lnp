@@ -1,0 +1,8 @@
+"STARTUP.obj",
+"Delay.obj",
+"I2C.obj",
+"LCD.obj",
+"main_node.obj",
+"SCI.obj",
+"tmp100.obj" 
+TO "BLENode" 
