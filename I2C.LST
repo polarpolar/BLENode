@@ -1,9 +1,9 @@
-C51 COMPILER V9.52.0.0   I2C                                                               09/11/2014 17:20:01 PAGE 1   
+C51 COMPILER V9.52.0.0   I2C                                                               09/18/2014 16:25:02 PAGE 1   
 
 
 C51 COMPILER V9.52.0.0, COMPILATION OF MODULE I2C
 OBJECT MODULE PLACED IN I2C.OBJ
-COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE I2C.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2)
+COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE I2C.c BROWSE DEBUG OBJECTEXTEND TABS(2)
 
 line level    source
 
@@ -62,7 +62,7 @@ line level    source
   53   2          P1 = 0x54;
   54   2          myNOP();
   55   2          while(TIP);
-C51 COMPILER V9.52.0.0   I2C                                                               09/11/2014 17:20:01 PAGE 2   
+C51 COMPILER V9.52.0.0   I2C                                                               09/18/2014 16:25:02 PAGE 2   
 
   56   2        }
   57   1        
@@ -126,7 +126,7 @@ line level    source
  115   1        P0 = 0x90;
  116   1        P1 = 0x74;    //01_1_10_100,CR
  117   1        
-C51 COMPILER V9.52.0.0   I2C                                                               09/11/2014 17:20:01 PAGE 3   
+C51 COMPILER V9.52.0.0   I2C                                                               09/18/2014 16:25:02 PAGE 3   
 
  118   1        //SR: wait tranfer over
  119   1        P1 = 0x54;
@@ -176,7 +176,7 @@ line level    source
  163   1      }
  164          
  165          void I2C_initial(){
- 166   1        //PRER set to 100kHz
+ 166   1        //PRER set to 10Hz  
  167   1        P1 = 0x54;    //01_1_10_000,PRERlo
  168   1        P0 = 0x02;
  169   1        P1 = 0x70;
@@ -190,7 +190,7 @@ line level    source
  177   1        P0 = 0x80;
  178   1        P1 = 0x72;    //01_1_10_010,CTR 
  179   1      }
-C51 COMPILER V9.52.0.0   I2C                                                               09/11/2014 17:20:01 PAGE 4   
+C51 COMPILER V9.52.0.0   I2C                                                               09/18/2014 16:25:02 PAGE 4   
 
  180          
  181          
@@ -254,7 +254,7 @@ line level    source
  239   1        uint i;
  240   1        /////////////   TXR: transfer slave adr   //////////////////
  241   1        P1 = 0x54;
-C51 COMPILER V9.52.0.0   I2C                                                               09/11/2014 17:20:01 PAGE 5   
+C51 COMPILER V9.52.0.0   I2C                                                               09/18/2014 16:25:02 PAGE 5   
 
  242   1        P0 = (sv_adr)|(0x01);
  243   1        P1 = 0x73;    //01_1_10_011,TXR
@@ -311,14 +311,14 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    926    ----
+   CODE SIZE        =    763    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =   ----      34
+   XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----    ----
+   DATA SIZE        =   ----      34
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
-C51 COMPILER V9.52.0.0   I2C                                                               09/11/2014 17:20:01 PAGE 6   
+C51 COMPILER V9.52.0.0   I2C                                                               09/18/2014 16:25:02 PAGE 6   
 
 END OF MODULE INFORMATION.
 

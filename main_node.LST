@@ -1,9 +1,9 @@
-C51 COMPILER V9.52.0.0   MAIN_NODE                                                         09/11/2014 17:20:01 PAGE 1   
+C51 COMPILER V9.52.0.0   MAIN_NODE                                                         09/18/2014 16:25:04 PAGE 1   
 
 
 C51 COMPILER V9.52.0.0, COMPILATION OF MODULE MAIN_NODE
 OBJECT MODULE PLACED IN main_node.OBJ
-COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE main_node.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2)
+COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE main_node.c BROWSE DEBUG OBJECTEXTEND TABS(2)
 
 line level    source
 
@@ -11,47 +11,92 @@ line level    source
    2          #include <stdio.h>
    3          #include "Delay.h"
    4          #include "LCD.h"
-   5          #include "BlueUART.h"
-   6          #include "tmp100.h"
-   7          
-   8          void main()
-   9          {
-  10   1        int payload = 0;
-  11   1        int tmp = 0;
-  12   1        
-  13   1        //Initialize
-  14   1        Ht1621_Init();
-  15   1        Ht1621WrAllData();
-  16   1        LCD_show(0xFFFF);
-  17   1        wait(1,1000);
-  18   1        
-  19   1        // tmp100
-  20   1        tmpInit();
-  21   1        tmpSetRes(3);
-  22   1        tmpSetRange(1);
-  23   1        tmpSetMode(0);
-  24   1        
-  25   1        LCD_show(0x7777);
-  26   1        wait(3,1000);
-  27   1        
-  28   1        while(1)
-  29   1        {
-  30   2          //tmpGetTmpCont(&tmp);
-  31   2          
-  32   2          LCD_show(payload++);
-  33   2          wait(3,1000);
-  34   2          LCD_show(tmp++);
-  35   2          wait(3,1000);
-  36   2        } 
-  37   1      }
+   5          #include "BDE0700.h"
+   6          #include "KXTJ9.h"
+   7          #include "ADS1000.h"
+   8          #include "BlueUART.h"
+   9          #include "tmp100.h"
+  10          #include "UVMeter.h"
+  11          
+  12          #define ANum 1
+  13          int a_time=0;
+  14          int a_count=0;
+  15          int cnt=0;
+  16          uint  temperaqture;
+  17          unsigned char payload[1+2+6*ANum+2];
+  18          
+  19          void main()
+  20          {   
+  21   1        //int  acc_x,acc_y,acc_z; 
+  22   1        int tmp = 0xAAAA;
+  23   1        unsigned char i;  
+  24   1        unsigned char ini_cnt;
+  25   1        
+  26   1        //Initialize
+  27   1        Ht1621_Init();
+  28   1        Ht1621WrAllData();
+  29   1        LCD_show(0xFFFF);wait(1,1000);
+  30   1        
+  31   1        // tmp100
+  32   1        if(cnt){
+  33   2        tmpInit();    // Init, Res12/RanH/Mod0
+  34   2        tmpSetRes(3);   // Set Resolution (0-9/1-10/2-11/3-12)
+  35   2        tmpSetRange(1);   // Set Range (0:L/1:H)
+  36   2        tmpSetMode(0);    // Set Mode (0:Continuous/1:ShutDown)
+  37   2          }
+  38   1          if(1){
+  39   2        // UV_Meter
+  40   2        uvReset();
+  41   2        uvPre();
+  42   2        setForceMode();
+  43   2        setALSVISMode();
+  44   2          }
+  45   1      
+  46   1        LCD_show(0x7777);wait(3,1000);
+  47   1        
+  48   1        payload[0]=1;
+  49   1        ini_cnt=0;
+  50   1        i=1;  
+  51   1        while(1)
+  52   1        {
+  53   2          //initialization
+  54   2          /*if(ini_cnt==50)
+  55   2          {   
+C51 COMPILER V9.52.0.0   MAIN_NODE                                                         09/18/2014 16:25:04 PAGE 2   
+
+  56   2          Ht1621_Init();
+  57   2          ini_cnt=1;
+  58   2          }*/
+  59   2      
+  60   2          //tmpGetTmpCont(&tmp);
+  61   2          startForceMeas();
+  62   2          getALSVISData(&tmp);
+  63   2          //circleData(&tmp);
+  64   2          //uvPre();
+  65   2          
+  66   2          cnt++;
+  67   2          if(cnt==1)
+  68   2          {
+  69   3            LCD_show(tmp);
+  70   3            BlueTooth_Send(payload, 1);
+  71   3            wait(3,1000);
+  72   3          }
+  73   2          if(cnt==2){
+  74   3            LCD_show(payload[0]++);
+  75   3            BlueTooth_Send(payload, 1);
+  76   3            wait(2,1000);
+  77   3            cnt=0;
+  78   3          }
+  79   2        } 
+  80   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    132    ----
+   CODE SIZE        =    202    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =   ----       4
+   XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----    ----
+   DATA SIZE        =     19       4
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

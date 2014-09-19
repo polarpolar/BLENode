@@ -1,0 +1,38 @@
+C51 COMPILER V9.52.0.0   BDE0700                                                           09/17/2014 22:17:39 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE BDE0700
+OBJECT MODULE PLACED IN BDE0700.OBJ
+COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE BDE0700.c BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          #include "BDE0700.h"
+   2          #include "LCD.h"
+   3          #include "Delay.h"
+   4          
+   5          uint get_Temperature(){
+   6   1        uint cnt = 0;
+   7   1        LP_set = 0;
+   8   1        DelayMS(20);
+   9   1        LP_set = 1;     //Set released as input mode
+  10   1        while(1){
+  11   2          cnt += 1;
+  12   2          if(LP_rd == 1)break;
+  13   2        }
+  14   1        return cnt;
+  15   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     31    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

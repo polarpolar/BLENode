@@ -53,9 +53,9 @@ void tmpInit(){
 /****************************************/
 void tmpSetRes(uint res){
 	uchar cmd;
-	
+
 	tmpPre();
-	
+
 	if(res>3||res<0){
 		LCD_show(0xEAA0);
 		DelayMS(1000); 
@@ -137,8 +137,11 @@ void tmpGetTmpCont(int *tmp){
 	// Read temperature
 	I2C_r(TMP100_SLA_ADDR, TMP100_TMP_ADDR, &dataRead, 2);
 	*tmp = dataRead[0];
+	//LCD_show(*tmp<<4);DelayMS(1000);
 	*temp = dataRead[1];
+	//LCD_show(*temp>>4);DelayMS(1000);
 	*tmp = (*tmp<<4)|(*temp>>4);
+	//LCD_show(*tmp);DelayMS(1000);
 }
 /****************************************/
 /* Get temperature from tmp100			*/
@@ -161,8 +164,11 @@ void tmpGetTmpShut(int *tmp){
 	// Read temperature
 	I2C_r(TMP100_SLA_ADDR, TMP100_TMP_ADDR, &dataRead, 2);
 	*tmp = dataRead[0];
+	//LCD_show(*tmp);DelayMS(1000);
 	temp = dataRead[1];
+	//LCD_show(*temp);DelayMS(1000);
 	*tmp = (*tmp<<4)|(temp>>4);
+	//LCD_show(*tmp);DelayMS(1000);
 	
 	// Set OS Back to 0
 	cmd &= ~0x80;

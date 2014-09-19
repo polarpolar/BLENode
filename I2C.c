@@ -163,7 +163,7 @@ void I2C_rst(){
 }
 
 void I2C_initial(){
-	//PRER set to 100kHz
+	//PRER set to 10Hz	
 	P1 = 0x54;		//01_1_10_000,PRERlo
 	P0 = 0x02;
 	P1 = 0x70;

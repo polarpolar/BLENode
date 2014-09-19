@@ -64,12 +64,17 @@
 #define AUX_DATA1						0x2D	// Data output
 
 // functions
+void writeToRegister(uchar regAddr, uchar* command, int n);
+void readFromRegister(uchar regAddr, uchar* command, int n);
+void writeToParameter(uchar paramAddr, uchar command);
+void readFromParameter(uchar paramAddr, uchar command);
 void uvReset();
 void uvPre();
 void setForceMode();
 void setAutonomousMode(int meas_rate);
 void setALSVISMode();
 void setUVMode();
-void getForceData();
+void startForceMeas();
 void getALSVISData(int* als_visData);
 void getUVData(int* uvData);
+void circleData(int* tmp);

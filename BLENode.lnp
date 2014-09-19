@@ -1,8 +1,10 @@
 "STARTUP.obj",
+"BlueUART.obj",
 "Delay.obj",
 "I2C.obj",
 "LCD.obj",
-"main_node.obj",
 "SCI.obj",
-"tmp100.obj" 
+"tmp100.obj",
+"UVMeter.obj",
+"main_node.obj" 
 TO "BLENode" 

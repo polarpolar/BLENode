@@ -1,9 +1,9 @@
-C51 COMPILER V9.52.0.0   UVMETER                                                           09/11/2014 16:54:01 PAGE 1   
+C51 COMPILER V9.52.0.0   UVMETER                                                           09/18/2014 16:25:03 PAGE 1   
 
 
 C51 COMPILER V9.52.0.0, COMPILATION OF MODULE UVMETER
 OBJECT MODULE PLACED IN UVMeter.OBJ
-COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE UVMeter.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2)
+COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE UVMeter.c BROWSE DEBUG OBJECTEXTEND TABS(2)
 
 line level    source
 
@@ -18,254 +18,269 @@ line level    source
    9          #include "LCD.h"
   10          
   11          /*****************************************************/
-  12          /*Prepare for I2C bus for UVMeter to be standby-mode */
-  13          /*                                                   */
-  14          /*  Set HW_KEY, Enter StandBy Mode finally           */
-  15          /*                                                   */
-  16          /*****************************************************/
-  17          void uvPre(){
-  18   1        uchar* command;
-  19   1        
-  20   1        I2C_rst();
-  21   1        I2C_initial();
-  22   1        
-  23   1        //  wait 25ms at least for init-mode to standby-mode
-  24   1        DelayMS(25);
-  25   1        
-  26   1        // prepare UV Meter
-  27   1        command[0] = 0x17;
-  28   1        I2C_w(SLAVE_ADDR, HW_KEY, command, 1);
-  29   1        DelayUS(10);
-  30   1      }
-  31          /*****************************************************/
-  32          /* Software reset                                    */
-  33          /*                                                   */
-  34          /*  Configure PART_ID, REV_ID, SEQ_ID to default     */
-  35          /*                                                   */
-  36          /*****************************************************/
-  37          void uvReset(){
-  38   1        uchar* command;
-  39   1        
-  40   1        // send software reset command
-  41   1        command[0] = SOFTWARE_RESET;
-  42   1        I2C_write(SLAVE_ADDR, command, 1);
-  43   1        DelayUS(10);
-  44   1      }
-  45          /*****************************************************/
-  46          /* Set Force Measure Mode                            */
-  47          /*                                                   */
-  48          /*  Set Meas_Rate to Zero to active the mode         */
-  49          /*                                                   */
-  50          /*****************************************************/
-  51          void setForceMode(){
-  52   1        uchar* command;
-  53   1        
-  54   1        // MEAS_RATE set to force mode
-  55   1        command[0] = 0x00;
-C51 COMPILER V9.52.0.0   UVMETER                                                           09/11/2014 16:54:01 PAGE 2   
+  12          /* Data Write to I2C Regs                            */
+  13          /*****************************************************/
+  14          void writeToRegister(uchar regAddr, uchar command[2], int n){
+  15   1        I2C_w(SLAVE_ADDR, regAddr, command, n);
+  16   1        DelayUS(10);
+  17   1      }
+  18          /*****************************************************/
+  19          /* Data read to I2C Regs                             */
+  20          /*****************************************************/
+  21          void readFromRegister(uchar regAddr, uchar command[2], int n){
+  22   1        I2C_r(SLAVE_ADDR, regAddr, command, n);
+  23   1        DelayUS(10);
+  24   1      }
+  25          /*****************************************************/
+  26          /* Data Write to Ram Param                           */
+  27          /*****************************************************/
+  28          void writeToParameter(uchar paramAddr, uchar command){
+  29   1        uchar destAddr[2];
+  30   1        destAddr[0] = 0xA0|paramAddr;
+  31   1        // write command to PARAM_WR
+  32   1        I2C_w(SLAVE_ADDR, PARAM_WR, &command, 1);
+  33   1        DelayUS(10);
+  34   1        // set command to COMMAND and the device write PARAM_WR to destiny
+  35   1        I2C_w(SLAVE_ADDR, COMMAND, destAddr, 1);
+  36   1        DelayUS(10);
+  37   1      }
+  38          /*****************************************************/
+  39          /* Data Read from Ram Param                          */
+  40          /*****************************************************/
+  41          void readFromParameter(uchar paramAddr, uchar command){
+  42   1        // set command to COMMAND and the device write destiny to PARAM_RD
+  43   1        uchar destAddr[2];
+  44   1        destAddr[0] = 0x80|paramAddr;
+  45   1        I2C_w(SLAVE_ADDR, COMMAND, destAddr, 1);
+  46   1        DelayUS(10);
+  47   1        // read inform from PARAM_RD
+  48   1        I2C_r(SLAVE_ADDR, PARAM_RD, &command, 1);
+  49   1        DelayUS(10);
+  50   1      }
+  51          /*****************************************************/
+  52          /*Prepare for I2C bus for UVMeter to be standby-mode */
+  53          /*                                                   */
+  54          /*  Set HW_KEY, Enter StandBy Mode finally           */
+  55          /*                                                   */
+C51 COMPILER V9.52.0.0   UVMETER                                                           09/18/2014 16:25:03 PAGE 2   
 
-  56   1        command[1] = 0x00;
-  57   1        I2C_w(SLAVE_ADDR, (MEAS_RATE0|0x40), command, 2);
-  58   1        DelayUS(10);
+  56          /*****************************************************/
+  57          void uvPre(){
+  58   1        uchar command[2];
   59   1        
-  60   1        // Reset the Interrupt
-  61   1        I2C_r(SLAVE_ADDR, IRQ_STATUS, command, 1);
-  62   1        command[0] = command[0]|0x20; // CMD_INT = 1
-  63   1        I2C_w(SLAVE_ADDR, IRQ_STATUS, command, 1);
-  64   1        DelayUS(10);
-  65   1        
-  66   1        // Send ALS_FORCE command for each measurement
-  67   1      }
-  68          /*****************************************************/
-  69          /* Set Autonomous Measure Mode                       */
-  70          /*                                                   */
-  71          /*  1.Set Meas_Rate to non-Zero to active the mode   */
-  72          /*  2.Send ALS_AUTO command at standby mode to start */
+  60   1        I2C_rst();
+  61   1        I2C_initial();
+  62   1        DelayMS(100); // wait from init to standby
+  63   1        
+  64   1        // prepare UV Meter/Send hardware key
+  65   1        command[0] = 0x17;
+  66   1        writeToRegister(HW_KEY, command, 1);
+  67   1        readFromRegister(HW_KEY, command, 1);
+  68   1      }
+  69          /*****************************************************/
+  70          /* Software reset                                    */
+  71          /*                                                   */
+  72          /*  Configure PART_ID, REV_ID, SEQ_ID to default     */
   73          /*                                                   */
   74          /*****************************************************/
-  75          void setAutonomousMode(int meas_rate){
-  76   1        uchar* command;
+  75          void uvReset(){
+  76   1        uchar command[2];
   77   1        
-  78   1        // MEAS_RATE set to auto mode
-  79   1        command[0] = meas_rate%16;
-  80   1        command[1] = meas_rate/16;
-  81   1        I2C_w(SLAVE_ADDR, (MEAS_RATE0|0x40), command, 2);
-  82   1        DelayUS(10);
-  83   1        
-  84   1        // Need to be at standby-mode
-  85   1        // Send ALS_AUTO Command
-  86   1        command[0] = ALS_AUTO;
-  87   1        I2C_w(SLAVE_ADDR, COMMAND, command, 1);
-  88   1        DelayUS(10);
-  89   1      }
-  90          /*****************************************************/
-  91          /* Set ALS_VIS Mode                                  */
-  92          /*                                                   */
-  93          /*  1.I2C regs:                                      */
-  94          /*    1) Interrupt enable, interrupt output enable   */
-  95          /*  2.RAM PARAM:
-  96          /*    1) CHLIST: choose VIS                          */
-  97          /*    2) ALS_ENCODING: choose VIS                    */
-  98          /*    2) ALS_VIS_ADC_GAIN: set resolution 1lx        */
-  99          /*    2) ALS_VIS_ADC_MISC: Set range normal range    */
- 100          /*                                                   */
- 101          /*****************************************************/
- 102          void setALSVISMode(){
- 103   1        uchar* command;
- 104   1        
- 105   1        /********* I2C regs: Set interrupt enable *********/
- 106   1        // interrupt output pin enable 
- 107   1        command[0] = 0x01;
- 108   1        I2C_w(SLAVE_ADDR, INT_CFG, command, 1);
- 109   1        DelayUS(10);
- 110   1        
- 111   1        // interrupt enable 
- 112   1        command[0] = 0x01;
- 113   1        I2C_w(SLAVE_ADDR, IRQ_ENABLE, command, 1);
- 114   1        DelayUS(10);
- 115   1        
- 116   1        /********* RAM PARAM: configuration CHLIST for param *********/
- 117   1        // write command to PARAM_WR: set set als_via
-C51 COMPILER V9.52.0.0   UVMETER                                                           09/11/2014 16:54:01 PAGE 3   
+  78   1        // send software reset command
+  79   1        command[0] = SOFTWARE_RESET;
+  80   1        writeToRegister(COMMAND, command, 1);
+  81   1        readFromRegister(COMMAND, command, 1);
+  82   1      }
+  83          /*****************************************************/
+  84          /* Set Force Measure Mode                            */
+  85          /*                                                   */
+  86          /*  Set Meas_Rate to Zero to active the mode         */
+  87          /*                                                   */
+  88          /*****************************************************/
+  89          void setForceMode(){
+  90   1        uchar command[2];
+  91   1        
+  92   1        // MEAS_RATE set to force mode
+  93   1        command[0] = 0x00;
+  94   1        command[1] = 0x00;
+  95   1        writeToRegister(MEAS_RATE0, command, 2);
+  96   1        readFromRegister(MEAS_RATE0, command, 2);
+  97   1        
+  98   1        /********* I2C regs: Set interrupt enable *********/
+  99   1        // interrupt output pin enable 
+ 100   1        command[0] = 0x01;
+ 101   1        writeToRegister(INT_CFG, command, 1);
+ 102   1        readFromRegister(INT_CFG, command, 1);
+ 103   1        // interrupt enable 
+ 104   1        command[0] = 0x01;
+ 105   1        writeToRegister(IRQ_ENABLE, command, 1);
+ 106   1        readFromRegister(IRQ_ENABLE, command, 1);
+ 107   1        
+ 108   1        // Reset the Interrupt
+ 109   1        //readFromRegister(IRQ_STATUS, command, 1);
+ 110   1        //writeToRegister(IRQ_STATUS, command, 1);
+ 111   1        
+ 112   1        // Send ALS_FORCE command for each measurement
+ 113   1      }
+ 114          /*****************************************************/
+ 115          /* Set Autonomous Measure Mode                       */
+ 116          /*                                                   */
+ 117          /*  1.Set Meas_Rate to non-Zero to active the mode   */
+C51 COMPILER V9.52.0.0   UVMETER                                                           09/18/2014 16:25:03 PAGE 3   
 
- 118   1        command[0] = 0x10;    // CHLIST command
- 119   1        I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
- 120   1        DelayUS(10);
- 121   1        // set command to COMMAND and the device write PARAM_WR to CHILIST_ADDR
- 122   1        command[0] = (0x80|CHLIST); // set CHLIST addr
- 123   1        I2C_w(SLAVE_ADDR, COMMAND, command, 1);
- 124   1        DelayUS(10);
- 125   1        
- 126   1        /********* RAM PARAM: Set ALS output encoding *********/
- 127   1        // write command to PARAM_WR: output set to VIS
- 128   1        command[0] = 0x10;  // set ALS_ENCODING to VIS
- 129   1        I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
- 130   1        DelayUS(10);
- 131   1        // set command to COMMAND and the device write PARAM_WR to ALS_ENCODING
- 132   1        command[0] = (0x80|ALS_ENCODING); // set ALS_ENCODING addr
- 133   1        I2C_w(SLAVE_ADDR, COMMAND, command, 1);
- 134   1        DelayUS(10);
- 135   1        
- 136   1        /********* RAM PARAM: Set resolution/ADC recover time *********/
- 137   1        // write command to PARAM_WR: 3.15us
- 138   1        command[0] = 0x40;  // set ALS_VIS_ADC_COUNTER to 3.15
- 139   1        I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
- 140   1        DelayUS(10);
- 141   1        // set command to COMMAND and the device write PARAM_WR to ALS_VIS_ADC_COUNTER
- 142   1        command[0] = (0x80|ALS_VIS_ADC_COUNTER);  // set ALS_VIS_ADC_COUNTER addr
- 143   1        I2C_w(SLAVE_ADDR, COMMAND, command, 1);
- 144   1        DelayUS(10);
- 145   1        // write command to PARAM_WR: 1lx
- 146   1        command[0] = 0x00;  // set ALS_VIS_ADC_GAIN to 0x0,1lx
- 147   1        I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
- 148   1        DelayUS(10);
- 149   1        // set command to COMMAND and the device write PARAM_WR to ALS_VIS_ADC_GAIN
- 150   1        command[0] = (0x80|ALS_VIS_ADC_GAIN); // set ALS_VIS_ADC_GAIN addr
- 151   1        I2C_w(SLAVE_ADDR, COMMAND, command, 1);
- 152   1        DelayUS(10);
+ 118          /*  2.Send ALS_AUTO command at standby mode to start */
+ 119          /*                                                   */
+ 120          /*****************************************************/
+ 121          /*void setAutonomousMode(int meas_rate){
+ 122            uchar command[2];
+ 123            
+ 124            // MEAS_RATE set to auto mode
+ 125            command[0] = meas_rate%16;
+ 126            command[1] = meas_rate/16;
+ 127            writeToRegister(MEAS_RATE0, &command, 2);
+ 128            
+ 129            // Need to be at standby-mode
+ 130            // Send ALS_AUTO Command
+ 131            command[0] = ALS_AUTO;
+ 132            writeToRegister(COMMAND, &command, 1);
+ 133          }*/
+ 134          /*****************************************************/
+ 135          /* Set ALS_VIS Mode                                  */
+ 136          /*                                                   */
+ 137          /*  1.I2C regs:                                      */
+ 138          /*    1) Interrupt enable, interrupt output enable   */
+ 139          /*  2.RAM PARAM:
+ 140          /*    1) CHLIST: choose VIS                          */
+ 141          /*    2) ALS_ENCODING: choose VIS                    */
+ 142          /*    2) ALS_VIS_ADC_GAIN: set resolution 1lx        */
+ 143          /*    2) ALS_VIS_ADC_MISC: Set range normal range    */
+ 144          /*                                                   */
+ 145          /*****************************************************/
+ 146          void setALSVISMode(){
+ 147   1        uchar command[2];
+ 148   1        
+ 149   1        /********* RAM PARAM: configuration CHLIST for param *********/
+ 150   1        // write command to CHILIST: set set als_via
+ 151   1        writeToParameter(CHLIST, 0x10);
+ 152   1        readFromParameter(CHLIST, command);
+*** WARNING C214 IN LINE 152 OF UVMeter.c: 'Argument': conversion: pointer to non-pointer
  153   1        
- 154   1        /********* RAM PARAM: Set range *********/
- 155   1        // write command to PARAM_WR: normal range
- 156   1        command[0] = 0x00;  // set ALS_VIS_ADC_MISC to normal range
- 157   1        I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
- 158   1        DelayUS(10);
- 159   1        // set command to COMMAND and the device write PARAM_WR to ALS_VIS_ADC_MISC
- 160   1        command[0] = (0x80|ALS_VIS_ADC_MISC); // set ALS_VIS_ADC_MISC addr
- 161   1        I2C_w(SLAVE_ADDR, COMMAND, command, 1);
- 162   1        DelayUS(10);
- 163   1      }
- 164          
- 165          // Set UV Mode
- 166          void setUVMode(){
- 167   1        uchar* command;
- 168   1        
- 169   1        // configuration i2c regs
- 170   1        // write UCOEF[3:0]
- 171   1        command[0] = 0x00;
- 172   1        command[1] = 0x02;
- 173   1        command[2] = 0x89;
- 174   1        command[3] = 0x29;
- 175   1        I2C_w(SLAVE_ADDR, (UCOEF0|0x40), command, 4);
- 176   1        DelayUS(10);
- 177   1        
- 178   1        // configuration param rams
- 179   1        // write command to PARAM_WR
-C51 COMPILER V9.52.0.0   UVMETER                                                           09/11/2014 16:54:01 PAGE 4   
+ 154   1        /********* RAM PARAM: Set ALS output encoding *********/
+ 155   1        // write command to ALS_ENCODING: output set to VIS
+ 156   1        writeToParameter(ALS_ENCODING, 0x10);
+ 157   1        readFromParameter(ALS_ENCODING, command);
+*** WARNING C214 IN LINE 157 OF UVMeter.c: 'Argument': conversion: pointer to non-pointer
+ 158   1        
+ 159   1        /********* RAM PARAM: Set resolution/ADC recover time *********/
+ 160   1        // write command to ALS_VIS_ADC_COUNTER: 3.15us
+ 161   1        writeToParameter(ALS_VIS_ADC_COUNTER, 0x40);
+ 162   1        readFromParameter(ALS_VIS_ADC_COUNTER, command);
+*** WARNING C214 IN LINE 162 OF UVMeter.c: 'Argument': conversion: pointer to non-pointer
+ 163   1        // write command to ALS_VIS_ADC_GAIN: 1lx
+ 164   1        writeToParameter(ALS_VIS_ADC_GAIN, 0x00);
+ 165   1        readFromParameter(ALS_VIS_ADC_GAIN, command);
+*** WARNING C214 IN LINE 165 OF UVMeter.c: 'Argument': conversion: pointer to non-pointer
+ 166   1        
+ 167   1        
+ 168   1        /********* RAM PARAM: Set range *********/
+ 169   1        // write command to ALS_VIS_ADC_MISC: normal range
+ 170   1        writeToParameter(ALS_VIS_ADC_MISC, 0x00);
+ 171   1        readFromParameter(ALS_VIS_ADC_MISC, command);
+*** WARNING C214 IN LINE 171 OF UVMeter.c: 'Argument': conversion: pointer to non-pointer
+ 172   1      }
+ 173          
+ 174          // Set UV Mode
+C51 COMPILER V9.52.0.0   UVMETER                                                           09/18/2014 16:25:03 PAGE 4   
 
- 180   1        command[0] = 0x80;    // CHLIST command, set EN_UV;
- 181   1        I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
- 182   1        DelayUS(10);
- 183   1        
- 184   1        command[0] = 0x81;  // set CHLIST addr
- 185   1        I2C_w(SLAVE_ADDR, COMMAND, command, 1);
- 186   1        DelayUS(10);
- 187   1        
- 188   1        /********* I2C regs: Set interrupt enable *********/
- 189   1        // interrupt output pin enable 
- 190   1        command[0] = 0x01;
- 191   1        I2C_w(SLAVE_ADDR, INT_CFG, command, 1);
- 192   1        DelayUS(10);
- 193   1        
- 194   1        // interrupt enable 
- 195   1        command[0] = 0x01;
- 196   1        I2C_w(SLAVE_ADDR, IRQ_ENABLE, command, 1);
- 197   1        DelayUS(10);
- 198   1      }
- 199          
- 200          void getForceData(){
- 201   1        uchar* command;
- 202   1        
- 203   1        // Send ALS_FORCE Command (Need to be at standby-mode)
- 204   1        command[0] = ALS_FORCE;
- 205   1        I2C_w(SLAVE_ADDR, COMMAND, command, 1);
- 206   1        DelayUS(10);
- 207   1      }
- 208          
- 209          void getALSVISData(int* als_visData){
- 210   1        uchar* tempData;
- 211   1        //uchar* tempInt;
- 212   1        // wait 285us?? didn't mentioned
- 213   1        //DelayUS(285);
- 214   1        
- 215   1        // Read the interrupt
- 216   1        //while(INT);
- 217   1        // Read vis data from regs
- 218   1        I2C_r(SLAVE_ADDR, (ALS_VIS_DATA0|0x00), tempData, 2);
- 219   1        *als_visData = tempData[1];
- 220   1        *als_visData = (*als_visData<<8)|tempData[0];
- 221   1          
- 222   1        // Clear INT
- 223   1        // read the ALS_INT first
- 224   1        //I2C_r(SLAVE_ADDR, (IRQ_STATUS|0x00), tempInt, 1);
- 225   1        // re-write the ALS_INT
- 226   1        //I2C_w(SLAVE_ADDR, (IRQ_STATUS|0x00), tempInt, 1);
- 227   1      }
- 228          
- 229          void getUVData(int* uvData){
- 230   1        uchar* tempData;
- 231   1        // wait 285us
- 232   1        DelayUS(285);
- 233   1        
- 234   1        // Read uv data from regs
- 235   1        I2C_r(SLAVE_ADDR, (AUX_DATA0|0x40), tempData, 2);
- 236   1        
- 237   1        *uvData = tempData[1];
- 238   1        *uvData = (*uvData<<8)|tempData[0]/100;
- 239   1      }
- 240          
+ 175          /*void setUVMode(){
+ 176            uchar command[2];
+ 177            
+ 178            /********* I2C regs: Set UV coefficience *********//*
+ 179            // write UCOEF[3:0]
+ 180            command[0] = 0x00;
+ 181            command[1] = 0x02;
+ 182            command[2] = 0x89;
+ 183            command[3] = 0x29;
+ 184            writeToRegister(UCOEF0, &command, 4);
+ 185            
+ 186            /********* I2C regs: Set interrupt enable *********//*
+ 187            // interrupt output pin enable 
+ 188            command[0] = 0x01;
+ 189            writeToRegister(INT_CFG, &command, 1);
+ 190            // interrupt enable 
+ 191            command[0] = 0x01;
+ 192            writeToRegister(IRQ_ENABLE, &command, 1);
+ 193            
+ 194            /********* RAM PARAM: Set range *********//*
+ 195            // write command to CHLIST: EN_UV
+ 196            writeToParameter(CHLIST, 0x80);
+ 197          }*/
+ 198          
+ 199          void startForceMeas(){
+ 200   1        uchar command[2];
+ 201   1        
+ 202   1        // Send ALS_FORCE Command (Need to be at standby-mode)
+ 203   1        command[0] = ALS_FORCE;
+ 204   1        writeToRegister(COMMAND, command,1);
+ 205   1        readFromRegister(COMMAND, command, 1);
+ 206   1      }
+ 207          
+ 208          void getALSVISData(int* als_visData){
+ 209   1        uchar tempData[2];
+ 210   1        uchar tempInt[1];
+ 211   1        // wait 285us?? didn't mentioned
+ 212   1        wait(1,1000);
+ 213   1        
+ 214   1        // Read the interrupt
+ 215   1        //while(INT);
+ 216   1        // Read vis data from regs
+ 217   1        readFromRegister(ALS_VIS_DATA0, tempData, 2);
+ 218   1        /*LCD_show(tempData[0]);
+ 219   1        wait(3,1000);
+ 220   1        LCD_show(0xAAAA);
+ 221   1        wait(3,1000);
+ 222   1        LCD_show(tempData[1]);
+ 223   1        wait(3,1000);*/
+ 224   1        *als_visData = (tempData[1]<<8)|tempData[0];
+ 225   1          
+ 226   1        // Clear INT
+ 227   1        // read the ALS_INT first
+ 228   1        I2C_r(SLAVE_ADDR, IRQ_STATUS, tempInt, 1);
+ 229   1        // re-write the ALS_INT
+ 230   1        I2C_w(SLAVE_ADDR, IRQ_STATUS, tempInt, 1);
+ 231   1      }
+ 232          
+ 233          /*void getUVData(int* uvData){
+ 234            uchar* tempData;
+ 235            // wait 285us
+ 236            DelayUS(285);
+C51 COMPILER V9.52.0.0   UVMETER                                                           09/18/2014 16:25:03 PAGE 5   
 
-C51 COMPILER V9.52.0.0   UVMETER                                                           09/11/2014 16:54:01 PAGE 5   
+ 237            
+ 238            // Read uv data from regs
+ 239            readFromRegister(AUX_DATA0, &tempData, 2);
+ 240            
+ 241            *uvData = tempData[1];
+ 242            *uvData = (*uvData<<8)|tempData[0]/100;
+ 243          }*/
+ 244          
+ 245          void circleData(int* tmp){
+ 246   1        uchar meas[2];
+ 247   1        
+ 248   1        readFromRegister(MEAS_RATE0, meas, 2);
+ 249   1        *tmp = (meas[0]<<8)|meas[1];
+ 250   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1489    ----
+   CODE SIZE        =    560    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =   ----      35
+   XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----    ----
+   DATA SIZE        =   ----      39
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  5 WARNING(S),  0 ERROR(S)

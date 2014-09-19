@@ -13,35 +13,32 @@
 int a_time=0;
 int a_count=0;
 int cnt=0;
-uint  temperaqture;
+uint  temperature;
 unsigned char payload[1+2+6*ANum+2];
 
 void main()
 {   
+	
 	//int	 acc_x,acc_y,acc_z;	
-	int tmp = 0xAAAA;
+	int tmp;
 	unsigned char i;	
 	unsigned char ini_cnt;
-	
 	//Initialize
 	Ht1621_Init();
 	Ht1621WrAllData();
 	LCD_show(0xFFFF);wait(1,1000);
 	
-	// tmp100
-	if(cnt){
+	// tmp
 	tmpInit();		// Init, Res12/RanH/Mod0
 	tmpSetRes(3);		// Set Resolution (0-9/1-10/2-11/3-12)
 	tmpSetRange(1);		// Set Range (0:L/1:H)
 	tmpSetMode(0);		// Set Mode (0:Continuous/1:ShutDown)
-		}
-		if(1){
+	
 	// UV_Meter
-	uvReset();
 	uvPre();
+	uvReset();
 	setForceMode();
 	setALSVISMode();
-		}
 
 	LCD_show(0x7777);wait(3,1000);
 	
@@ -51,30 +48,30 @@ void main()
 	while(1)
 	{
 		//initialization
-		/*if(ini_cnt==50)
+		if(ini_cnt==50)
 		{		
 		Ht1621_Init();
 		ini_cnt=1;
-		}*/
+		}
 
 		//tmpGetTmpCont(&tmp);
-		startForceMeas();
+		getForceData();
 		getALSVISData(&tmp);
-		//circleData(&tmp);
-		//uvPre();
 		
 		cnt++;
 		if(cnt==1)
 		{
 			LCD_show(tmp);
 			BlueTooth_Send(payload, 1);
-			wait(3,1000);
+			wait(3,2000);
 		}
-		if(cnt==2){
+		if(cnt==2)
+		{
 			LCD_show(payload[0]++);
 			BlueTooth_Send(payload, 1);
-			wait(2,1000);
+			wait(3,1000);
 			cnt=0;
 		}
+				 		
 	}	
 }

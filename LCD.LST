@@ -1,9 +1,9 @@
-C51 COMPILER V9.52.0.0   LCD                                                               09/11/2014 17:20:01 PAGE 1   
+C51 COMPILER V9.52.0.0   LCD                                                               09/18/2014 16:25:03 PAGE 1   
 
 
 C51 COMPILER V9.52.0.0, COMPILATION OF MODULE LCD
 OBJECT MODULE PLACED IN LCD.OBJ
-COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE LCD.c LARGE BROWSE DEBUG OBJECTEXTEND TABS(2)
+COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE LCD.c BROWSE DEBUG OBJECTEXTEND TABS(2)
 
 line level    source
 
@@ -62,7 +62,7 @@ line level    source
   53          //函数名称：void Ht1621_Init(void) 
   54          //功能描述: HT1621初始化 
   55          //说    明：初始化后，液晶屏所有字段均显示 
-C51 COMPILER V9.52.0.0   LCD                                                               09/11/2014 17:20:01 PAGE 2   
+C51 COMPILER V9.52.0.0   LCD                                                               09/18/2014 16:25:03 PAGE 2   
 
   56          //-----------------------------------------------------------------------------------------
   57          void Ht1621_Init(void){ 
@@ -126,7 +126,7 @@ line level    source
  115   1        /////DelayUS(1);
  116   1      }
  117          
-C51 COMPILER V9.52.0.0   LCD                                                               09/11/2014 17:20:01 PAGE 3   
+C51 COMPILER V9.52.0.0   LCD                                                               09/18/2014 16:25:03 PAGE 3   
 
  118          void Ht1621OFF(void){
  119   1        CS = 1;
@@ -138,11 +138,11 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    392    ----
+   CODE SIZE        =    379    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =   ----       2
+   XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----    ----
+   DATA SIZE        =   ----       2
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

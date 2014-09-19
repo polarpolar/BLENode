@@ -1,0 +1,103 @@
+C51 COMPILER V9.52.0.0   MAIN_NODE_B                                                       09/15/2014 09:35:10 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE MAIN_NODE_B
+OBJECT MODULE PLACED IN main_node_b.OBJ
+COMPILER INVOKED BY: E:\KeilC\Keil2\C51\BIN\C51.EXE main_node_b.c BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          #include <REG51.H>
+   2          #include <stdio.h>
+   3          #include "Delay.h"
+   4          #include "LCD.h"
+   5          #include "BDE0700.h"
+   6          #include "KXTJ9.h"
+   7          #include "ADS1000.h"
+   8          #include "BlueUART.h"
+   9          #include "tmp100.h"
+  10          #include "UVMeter.h"
+  11          
+  12          #define ANum 1
+  13          int a_time=0;
+  14          int a_count=0;
+  15          int cnt=0;
+  16          uint  temperature;
+  17          unsigned char payload[1+2+6*ANum+2];
+  18          
+  19          void main()
+  20          {   
+  21   1        
+  22   1        //int  acc_x,acc_y,acc_z; 
+  23   1        int tmp;
+  24   1        unsigned char i;  
+  25   1        unsigned char ini_cnt;
+  26   1        //Initialize
+  27   1        Ht1621_Init();
+  28   1        Ht1621WrAllData();
+  29   1        
+  30   1        // tmp
+  31   1        tmpInit();    // Init, Res12/RanH/Mod0
+  32   1        tmpSetRes(3);   // Set Resolution (0-9/1-10/2-11/3-12)
+  33   1        tmpSetRange(1);   // Set Range (0:L/1:H)
+  34   1        tmpSetMode(0);    // Set Mode (0:Continuous/1:ShutDown)
+  35   1        
+  36   1        // UV_Meter
+  37   1        uvPre();
+  38   1        uvReset();
+  39   1        setForceMode();
+  40   1        setALSVISMode();
+  41   1      
+  42   1        LCD_show(0x7777);wait(3,1000);
+  43   1        
+  44   1        payload[0]=1;
+  45   1        ini_cnt=0;
+  46   1        i=1;  
+  47   1        while(1)
+  48   1        {
+  49   2          //initialization
+  50   2          if(ini_cnt==50)
+  51   2          {   
+  52   3          Ht1621_Init();
+  53   3          ini_cnt=1;
+  54   3          }
+  55   2      
+C51 COMPILER V9.52.0.0   MAIN_NODE_B                                                       09/15/2014 09:35:10 PAGE 2   
+
+  56   2          //tmpGetTmpCont(&tmp);
+  57   2          getForceData();
+  58   2          getALSVISData(&tmp);
+  59   2          
+  60   2          cnt++;
+  61   2          if(cnt==1)
+  62   2          {
+  63   3            //payload[0]=0x12;
+  64   3            LCD_show(tmp);
+  65   3            BlueTooth_Send(payload, 1);
+  66   3            wait(3,2000);
+  67   3          }
+  68   2          if(cnt==2)
+  69   2          {
+  70   3            //payload[0]=0x34;
+  71   3            LCD_show(payload[0]++);
+  72   3            BlueTooth_Send(payload, 1);
+  73   3            wait(3,1000);
+  74   3            cnt=0;
+  75   3          }
+  76   2                  
+  77   2        } 
+  78   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    183    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     19       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

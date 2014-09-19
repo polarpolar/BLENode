@@ -9,24 +9,62 @@
 #include "LCD.h"
 
 /*****************************************************/
+/* Data Write to I2C Regs 													 */
+/*****************************************************/
+void writeToRegister(uchar regAddr, uchar command[2], int n){
+	I2C_w(SLAVE_ADDR, regAddr, command, n);
+	DelayUS(10);
+}
+/*****************************************************/
+/* Data read to I2C Regs 							  						 */
+/*****************************************************/
+void readFromRegister(uchar regAddr, uchar command[2], int n){
+	I2C_r(SLAVE_ADDR, regAddr, command, n);
+	DelayUS(10);
+}
+/*****************************************************/
+/* Data Write to Ram Param  												 */
+/*****************************************************/
+void writeToParameter(uchar paramAddr, uchar command){
+	uchar destAddr[2];
+	destAddr[0] = 0xA0|paramAddr;
+	// write command to PARAM_WR
+	I2C_w(SLAVE_ADDR, PARAM_WR, &command, 1);
+	DelayUS(10);
+	// set command to COMMAND and the device write PARAM_WR to destiny
+	I2C_w(SLAVE_ADDR, COMMAND, destAddr, 1);
+	DelayUS(10);
+}
+/*****************************************************/
+/* Data Read from Ram Param  												 */
+/*****************************************************/
+void readFromParameter(uchar paramAddr, uchar command){
+	// set command to COMMAND and the device write destiny to PARAM_RD
+	uchar destAddr[2];
+	destAddr[0] = 0x80|paramAddr;
+	I2C_w(SLAVE_ADDR, COMMAND, destAddr, 1);
+	DelayUS(10);
+	// read inform from PARAM_RD
+	I2C_r(SLAVE_ADDR, PARAM_RD, &command, 1);
+	DelayUS(10);
+}
+/*****************************************************/
 /*Prepare for I2C bus for UVMeter to be standby-mode */
 /*																									 */
 /*	Set HW_KEY, Enter StandBy Mode finally					 */
 /*																									 */
 /*****************************************************/
 void uvPre(){
-	uchar* command;
+	uchar command[2];
 	
 	I2C_rst();
 	I2C_initial();
+	DelayMS(100);	// wait from init to standby
 	
-	//	wait 25ms at least for init-mode to standby-mode
-	DelayMS(25);
-	
-	// prepare UV Meter
+	// prepare UV Meter/Send hardware key
 	command[0] = 0x17;
-	I2C_w(SLAVE_ADDR, HW_KEY, command, 1);
-	DelayUS(10);
+	writeToRegister(HW_KEY, command, 1);
+	readFromRegister(HW_KEY, command, 1);
 }
 /*****************************************************/
 /* Software reset																		 */
@@ -35,12 +73,12 @@ void uvPre(){
 /*																									 */
 /*****************************************************/
 void uvReset(){
-	uchar* command;
+	uchar command[2];
 	
 	// send software reset command
 	command[0] = SOFTWARE_RESET;
-	I2C_write(SLAVE_ADDR, command, 1);
-	DelayUS(10);
+	writeToRegister(COMMAND, command, 1);
+	readFromRegister(COMMAND, command, 1);
 }
 /*****************************************************/
 /* Set Force Measure Mode														 */
@@ -49,19 +87,27 @@ void uvReset(){
 /*																									 */
 /*****************************************************/
 void setForceMode(){
-	uchar* command;
+	uchar command[2];
 	
 	// MEAS_RATE set to force mode
 	command[0] = 0x00;
 	command[1] = 0x00;
-	I2C_w(SLAVE_ADDR, (MEAS_RATE0|0x40), command, 2);
-	DelayUS(10);
+	writeToRegister(MEAS_RATE0, command, 2);
+	readFromRegister(MEAS_RATE0, command, 2);
+	
+	/********* I2C regs: Set interrupt enable *********/
+	// interrupt output pin enable 
+	command[0] = 0x01;
+	writeToRegister(INT_CFG, command, 1);
+	readFromRegister(INT_CFG, command, 1);
+	// interrupt enable 
+	command[0] = 0x01;
+	writeToRegister(IRQ_ENABLE, command, 1);
+	readFromRegister(IRQ_ENABLE, command, 1);
 	
 	// Reset the Interrupt
-	I2C_r(SLAVE_ADDR, IRQ_STATUS, command, 1);
-	command[0] = command[0]|0x20;	// CMD_INT = 1
-	I2C_w(SLAVE_ADDR, IRQ_STATUS, command, 1);
-	DelayUS(10);
+	//readFromRegister(IRQ_STATUS, command, 1);
+	//writeToRegister(IRQ_STATUS, command, 1);
 	
 	// Send ALS_FORCE command for each measurement
 }
@@ -72,21 +118,19 @@ void setForceMode(){
 /*	2.Send ALS_AUTO command at standby mode to start */
 /*																									 */
 /*****************************************************/
-void setAutonomousMode(int meas_rate){
-	uchar* command;
+/*void setAutonomousMode(int meas_rate){
+	uchar command[2];
 	
 	// MEAS_RATE set to auto mode
 	command[0] = meas_rate%16;
 	command[1] = meas_rate/16;
-	I2C_w(SLAVE_ADDR, (MEAS_RATE0|0x40), command, 2);
-	DelayUS(10);
+	writeToRegister(MEAS_RATE0, &command, 2);
 	
 	// Need to be at standby-mode
 	// Send ALS_AUTO Command
 	command[0] = ALS_AUTO;
-	I2C_w(SLAVE_ADDR, COMMAND, command, 1);
-	DelayUS(10);
-}
+	writeToRegister(COMMAND, &command, 1);
+}*/
 /*****************************************************/
 /* Set ALS_VIS Mode																	 */
 /*																									 */
@@ -100,141 +144,107 @@ void setAutonomousMode(int meas_rate){
 /*																									 */
 /*****************************************************/
 void setALSVISMode(){
-	uchar* command;
-	
-	/********* I2C regs: Set interrupt enable *********/
-	// interrupt output pin enable 
-	command[0] = 0x01;
-	I2C_w(SLAVE_ADDR, INT_CFG, command, 1);
-	DelayUS(10);
-	
-	// interrupt enable 
-	command[0] = 0x01;
-	I2C_w(SLAVE_ADDR, IRQ_ENABLE, command, 1);
-	DelayUS(10);
+	uchar command[2];
 	
 	/********* RAM PARAM: configuration CHLIST for param *********/
-	// write command to PARAM_WR: set set als_via
-	command[0] = 0x10;		// CHLIST command
-	I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
-	DelayUS(10);
-	// set command to COMMAND and the device write PARAM_WR to CHILIST_ADDR
-	command[0] = (0x80|CHLIST);	// set CHLIST addr
-	I2C_w(SLAVE_ADDR, COMMAND, command, 1);
-	DelayUS(10);
+	// write command to CHILIST: set set als_via
+	writeToParameter(CHLIST, 0x10);
+	readFromParameter(CHLIST, command);
 	
 	/********* RAM PARAM: Set ALS output encoding *********/
-	// write command to PARAM_WR: output set to VIS
-	command[0] = 0x10;	// set ALS_ENCODING to VIS
-	I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
-	DelayUS(10);
-	// set command to COMMAND and the device write PARAM_WR to ALS_ENCODING
-	command[0] = (0x80|ALS_ENCODING);	// set ALS_ENCODING addr
-	I2C_w(SLAVE_ADDR, COMMAND, command, 1);
-	DelayUS(10);
+	// write command to ALS_ENCODING: output set to VIS
+	writeToParameter(ALS_ENCODING, 0x10);
+	readFromParameter(ALS_ENCODING, command);
 	
 	/********* RAM PARAM: Set resolution/ADC recover time *********/
-	// write command to PARAM_WR: 3.15us
-	command[0] = 0x40;	// set ALS_VIS_ADC_COUNTER to 3.15
-	I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
-	DelayUS(10);
-	// set command to COMMAND and the device write PARAM_WR to ALS_VIS_ADC_COUNTER
-	command[0] = (0x80|ALS_VIS_ADC_COUNTER);	// set ALS_VIS_ADC_COUNTER addr
-	I2C_w(SLAVE_ADDR, COMMAND, command, 1);
-	DelayUS(10);
-	// write command to PARAM_WR: 1lx
-	command[0] = 0x00;	// set ALS_VIS_ADC_GAIN to 0x0,1lx
-	I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
-	DelayUS(10);
-	// set command to COMMAND and the device write PARAM_WR to ALS_VIS_ADC_GAIN
-	command[0] = (0x80|ALS_VIS_ADC_GAIN);	// set ALS_VIS_ADC_GAIN addr
-	I2C_w(SLAVE_ADDR, COMMAND, command, 1);
-	DelayUS(10);
+	// write command to ALS_VIS_ADC_COUNTER: 3.15us
+	writeToParameter(ALS_VIS_ADC_COUNTER, 0x40);
+	readFromParameter(ALS_VIS_ADC_COUNTER, command);
+	// write command to ALS_VIS_ADC_GAIN: 1lx
+	writeToParameter(ALS_VIS_ADC_GAIN, 0x00);
+	readFromParameter(ALS_VIS_ADC_GAIN, command);
+	
 	
 	/********* RAM PARAM: Set range *********/
-	// write command to PARAM_WR: normal range
-	command[0] = 0x00;	// set ALS_VIS_ADC_MISC to normal range
-	I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
-	DelayUS(10);
-	// set command to COMMAND and the device write PARAM_WR to ALS_VIS_ADC_MISC
-	command[0] = (0x80|ALS_VIS_ADC_MISC);	// set ALS_VIS_ADC_MISC addr
-	I2C_w(SLAVE_ADDR, COMMAND, command, 1);
-	DelayUS(10);
+	// write command to ALS_VIS_ADC_MISC: normal range
+	writeToParameter(ALS_VIS_ADC_MISC, 0x00);
+	readFromParameter(ALS_VIS_ADC_MISC, command);
 }
 
 // Set UV Mode
-void setUVMode(){
-	uchar* command;
+/*void setUVMode(){
+	uchar command[2];
 	
-	// configuration i2c regs
+	/********* I2C regs: Set UV coefficience *********//*
 	// write UCOEF[3:0]
 	command[0] = 0x00;
 	command[1] = 0x02;
 	command[2] = 0x89;
 	command[3] = 0x29;
-	I2C_w(SLAVE_ADDR, (UCOEF0|0x40), command, 4);
-	DelayUS(10);
+	writeToRegister(UCOEF0, &command, 4);
 	
-	// configuration param rams
-	// write command to PARAM_WR
-	command[0] = 0x80;		// CHLIST command, set EN_UV;
-	I2C_w(SLAVE_ADDR, PARAM_WR, command, 1);
-	DelayUS(10);
-	
-	command[0] = 0x81;	// set CHLIST addr
-	I2C_w(SLAVE_ADDR, COMMAND, command, 1);
-	DelayUS(10);
-	
-	/********* I2C regs: Set interrupt enable *********/
+	/********* I2C regs: Set interrupt enable *********//*
 	// interrupt output pin enable 
 	command[0] = 0x01;
-	I2C_w(SLAVE_ADDR, INT_CFG, command, 1);
-	DelayUS(10);
-	
+	writeToRegister(INT_CFG, &command, 1);
 	// interrupt enable 
 	command[0] = 0x01;
-	I2C_w(SLAVE_ADDR, IRQ_ENABLE, command, 1);
-	DelayUS(10);
-}
+	writeToRegister(IRQ_ENABLE, &command, 1);
+	
+	/********* RAM PARAM: Set range *********//*
+	// write command to CHLIST: EN_UV
+	writeToParameter(CHLIST, 0x80);
+}*/
 
-void getForceData(){
-	uchar* command;
+void startForceMeas(){
+	uchar command[2];
 	
 	// Send ALS_FORCE Command (Need to be at standby-mode)
 	command[0] = ALS_FORCE;
-	I2C_w(SLAVE_ADDR, COMMAND, command, 1);
-	DelayUS(10);
+	writeToRegister(COMMAND, command,1);
+	readFromRegister(COMMAND, command, 1);
 }
 
 void getALSVISData(int* als_visData){
-	uchar* tempData;
-	//uchar* tempInt;
+	uchar tempData[2];
+	uchar tempInt[1];
 	// wait 285us?? didn't mentioned
-	//DelayUS(285);
+	wait(1,1000);
 	
 	// Read the interrupt
 	//while(INT);
 	// Read vis data from regs
-	I2C_r(SLAVE_ADDR, (ALS_VIS_DATA0|0x00), tempData, 2);
-	*als_visData = tempData[1];
-	*als_visData = (*als_visData<<8)|tempData[0];
+	readFromRegister(ALS_VIS_DATA0, tempData, 2);
+	/*LCD_show(tempData[0]);
+	wait(3,1000);
+	LCD_show(0xAAAA);
+	wait(3,1000);
+	LCD_show(tempData[1]);
+	wait(3,1000);*/
+	*als_visData = (tempData[1]<<8)|tempData[0];
 		
 	// Clear INT
 	// read the ALS_INT first
-	//I2C_r(SLAVE_ADDR, (IRQ_STATUS|0x00), tempInt, 1);
+	I2C_r(SLAVE_ADDR, IRQ_STATUS, tempInt, 1);
 	// re-write the ALS_INT
-	//I2C_w(SLAVE_ADDR, (IRQ_STATUS|0x00), tempInt, 1);
+	I2C_w(SLAVE_ADDR, IRQ_STATUS, tempInt, 1);
 }
 
-void getUVData(int* uvData){
+/*void getUVData(int* uvData){
 	uchar* tempData;
 	// wait 285us
 	DelayUS(285);
 	
 	// Read uv data from regs
-	I2C_r(SLAVE_ADDR, (AUX_DATA0|0x40), tempData, 2);
+	readFromRegister(AUX_DATA0, &tempData, 2);
 	
 	*uvData = tempData[1];
 	*uvData = (*uvData<<8)|tempData[0]/100;
-}
+}*/
 
+void circleData(int* tmp){
+	uchar meas[2];
+	
+	readFromRegister(MEAS_RATE0, meas, 2);
+	*tmp = (meas[0]<<8)|meas[1];
+}
